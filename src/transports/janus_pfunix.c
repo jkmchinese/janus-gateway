@@ -180,7 +180,7 @@ static int janus_pfunix_create_socket(char *pfname, gboolean use_dgram) {
 	if(pfname == NULL)
 		return -1;
 	int fd = -1;
-	if(strlen(pfname) > UNIX_PATH_MAX) {
+	if(strnlen(pfname, UNIX_PATH_MAX + 1) > UNIX_PATH_MAX) {
 		JANUS_LOG(LOG_WARN, "The provided path name (%s) is longer than %lu characters, it will be truncated\n", pfname, UNIX_PATH_MAX);
 		pfname[UNIX_PATH_MAX] = '\0';
 	}
@@ -900,9 +900,9 @@ void *janus_pfunix_thread(void *data) {
 		}
 	}
 
-	socklen_t addrlen = sizeof(struct sockaddr_un);
-	void *addr = g_malloc(addrlen+1);
+	void *addr = g_malloc(sizeof(struct sockaddr_un)+1);
 	if(pfd > -1) {
+		socklen_t addrlen = sizeof(struct sockaddr_un);
 		/* Unlink the path name first */
 #ifdef HAVE_LIBSYSTEMD
 		if((getsockname(pfd, (struct sockaddr *)addr, &addrlen) != -1) && (FALSE == sd_socket)) {
@@ -917,6 +917,7 @@ void *janus_pfunix_thread(void *data) {
 	}
 	pfd = -1;
 	if(admin_pfd > -1) {
+		socklen_t addrlen = sizeof(struct sockaddr_un);
 		/* Unlink the path name first */
 #ifdef HAVE_LIBSYSTEMD
 		if((getsockname(admin_pfd, (struct sockaddr *)addr, &addrlen) != -1) && (FALSE == admin_sd_socket)) {

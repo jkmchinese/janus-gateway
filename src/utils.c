@@ -895,8 +895,9 @@ gboolean janus_h265_is_keyframe(const char *buffer, int len) {
 	memcpy(&unit, buffer, sizeof(uint16_t));
 	unit = ntohs(unit);
 	uint8_t type = (unit & 0x7E00) >> 9;
-	if(type == 32 || type == 33) {
-		/* FIXME We return TRUE for VPS and SPS */
+	if(type == 32 || type == 33 || type == 34 || type == 16 || type == 17 || type == 18 || type == 19 || type == 20 || type == 21) {
+		/* FIXME We return TRUE for more than just VPS and SPS, as
+		 * suggested in https://github.com/meetecho/janus-gateway/issues/2323 */
 		return TRUE;
 	}
 	return FALSE;
@@ -936,10 +937,10 @@ int janus_vp8_parse_descriptor(char *buffer, int len,
 				memcpy(&partpicid, buffer, sizeof(uint16_t));
 				wholepicid = ntohs(partpicid);
 				partpicid = (wholepicid & 0x7FFF);
-				if(picid)
-					*picid = partpicid;
 				buffer++;
 			}
+			if(picid)
+				*picid = partpicid;
 		}
 		if(lbit) {
 			/* Read the TL0PICIDX octet */
@@ -1250,6 +1251,8 @@ GList *janus_red_parse_blocks(char *buffer, int len) {
 			}
 			temp = temp->next;
 		}
+	}
+	if(plen > 0) {
 		/* The last block is the primary data, add it to the list */
 		gens++;
 		JANUS_LOG(LOG_HUGE, "  >> [%d] plen=%d\n", gens, plen);
